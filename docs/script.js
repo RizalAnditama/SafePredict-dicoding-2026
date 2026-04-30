@@ -10,21 +10,6 @@ const RETRY_DELAY = 2000;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-  // Load saved backend URL
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    backendUrl = saved;
-  }
-  updateBackendUrlDisplay();
-
-  // Setup event listeners
-  document.getElementById('configButton').addEventListener('click', openConfigModal);
-  document.getElementById('saveConfig').addEventListener('click', saveBackendUrl);
-  document.getElementById('cancelConfig').addEventListener('click', closeConfigModal);
-  document.getElementById('backendUrlInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') saveBackendUrl();
-  });
-
   // Initialize dashboard
   loadRiskScore();
   initializeCamera();
@@ -42,48 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 5000);
 });
-
-// Update displayed backend URL
-function updateBackendUrlDisplay() {
-  document.getElementById('backendUrl').textContent = backendUrl;
-  document.getElementById('backendUrlInput').value = backendUrl;
-}
-
-// Open configuration modal
-function openConfigModal() {
-  document.getElementById('configModal').style.display = 'flex';
-  document.getElementById('backendUrlInput').focus();
-}
-
-// Close configuration modal
-function closeConfigModal() {
-  document.getElementById('configModal').style.display = 'none';
-}
-
-// Save backend URL
-function saveBackendUrl() {
-  const newUrl = document.getElementById('backendUrlInput').value.trim();
-  
-  if (!newUrl) {
-    alert('Please enter a valid URL');
-    return;
-  }
-
-  // Normalize URL
-  let url = newUrl;
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    url = 'http://' + url;
-  }
-
-  backendUrl = url;
-  localStorage.setItem(STORAGE_KEY, backendUrl);
-  updateBackendUrlDisplay();
-  closeConfigModal();
-
-  // Reload data with new backend
-  loadRiskScore();
-  initializeCamera();
-}
 
 // Fetch risk score from backend
 async function loadRiskScore() {
@@ -243,3 +186,4 @@ document.addEventListener('click', (e) => {
     closeConfigModal();
   }
 });
+modal && 
