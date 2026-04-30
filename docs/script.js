@@ -1,12 +1,9 @@
 // Configuration
-const STORAGE_KEY = 'safepredict-backend-url';
 const DEFAULT_BACKEND_URL = 'http://localhost:8000';
 
 // State
 let backendUrl = DEFAULT_BACKEND_URL;
-let cameraStreamRetries = 0;
-const MAX_RETRIES = 5;
-const RETRY_DELAY = 2000;
+let activeCameraStream = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -16,16 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Refresh risk score every 30 seconds
   setInterval(loadRiskScore, 30000);
-  
-  // Retry camera connection if failed (check every 5 seconds)
-  setInterval(() => {
-    const img = document.getElementById('cameraStream');
-    const fallback = document.getElementById('cameraFallback');
-    // If camera hasn't connected and we have retries left, try again
-    if (fallback.style.display !== 'none' && cameraStreamRetries < MAX_RETRIES) {
-      initializeCamera();
-    }
-  }, 5000);
 });
 
 // Fetch risk score from backend
@@ -98,73 +85,61 @@ function updateDashboardWithRiskData(riskData) {
 // Initialize camera stream
 function initializeCamera() {
   const img = document.getElementById('cameraStream');
+  const video = document.getElementById('cameraVideo');
   const fallback = document.getElementById('cameraFallback');
   const statusPill = document.getElementById('cameraStatus');
 
   // Reset state before attempting connection
   img.style.display = 'none';
   img.src = '';
+  video.style.display = 'none';
+  video.srcObject = null;
   fallback.style.display = 'block';
   statusPill.textContent = 'Connecting...';
   statusPill.classList.remove('status-pill-error');
 
-  // Try MJPEG stream (native browser support for multipart/x-mixed-replace)
-  tryMjpegStream(img, fallback, statusPill);
-}
+  // Stop any existing stream before starting a new one
+  if (activeCameraStream) {
+    activeCameraStream.getTracks().forEach(track => track.stop());
+    activeCameraStream = null;
+  }
 
-// Try to stream camera via MJPEG (img tag with native browser support)
-function tryMjpegStream(img, fallback, statusPill) {
-  const cameraUrl = `${backendUrl}/api/camera/stream`;
-  
-  let hasLoaded = false;
-  let loadTimeout;
-  const startTime = Date.now();
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    statusPill.textContent = 'Camera not supported';
+    statusPill.classList.add('status-pill-error');
+    fallback.innerHTML =
+      '<div style="text-align:center;padding:60px 20px;color:var(--muted)">' +
+      '<p>Camera API not supported in this browser.</p>' +
+      '<small>Use a modern browser with HTTPS or localhost.</small>' +
+      '</div>';
+    return;
+  }
 
-  console.log('Attempting camera connection:', cameraUrl);
-
-  // Set timeout to detect connection failure
-  loadTimeout = setTimeout(() => {
-    if (!hasLoaded) {
-      img.style.display = 'none';
-      img.src = ''; // Clear src to allow retry
-      statusPill.textContent = 'Connection timeout';
-      statusPill.classList.add('status-pill-error');
-      cameraStreamRetries++;
-      console.warn(`Camera stream timeout after ${Date.now() - startTime}ms (attempt ${cameraStreamRetries}/${MAX_RETRIES})`);
-    }
-  }, 5000);
-
-  // Handle successful connection
-  img.onload = () => {
-    if (!hasLoaded) {
-      clearTimeout(loadTimeout);
-      hasLoaded = true;
-      img.style.display = 'block';
+  navigator.mediaDevices
+    .getUserMedia({ video: true, audio: false })
+    .then(stream => {
+      activeCameraStream = stream;
+      video.srcObject = stream;
+      video.setAttribute('playsinline', '');
+      video.muted = true;
+      return video.play();
+    })
+    .then(() => {
+      video.style.display = 'block';
       fallback.style.display = 'none';
-      statusPill.textContent = 'Live bridge';
+      statusPill.textContent = 'Live';
       statusPill.classList.remove('status-pill-error');
-      cameraStreamRetries = 0;
-      console.log(`Camera stream connected successfully in ${Date.now() - startTime}ms`);
-    }
-  };
-
-  // Handle connection errors
-  img.onerror = (event) => {
-    if (!hasLoaded) {
-      clearTimeout(loadTimeout);
-      img.style.display = 'none';
-      img.src = ''; // Clear src to allow retry
-      statusPill.textContent = 'Connection failed';
+    })
+    .catch(error => {
+      console.warn('Camera access failed:', error);
+      statusPill.textContent = 'Camera blocked';
       statusPill.classList.add('status-pill-error');
-      cameraStreamRetries++;
-      console.warn(`Camera stream error after ${Date.now() - startTime}ms (attempt ${cameraStreamRetries}/${MAX_RETRIES})`, event);
-    }
-  };
-
-  // Set MJPEG stream source
-  // NOTE: Do NOT append timestamps - this breaks the multipart/x-mixed-replace protocol
-  // The browser automatically handles the continuous multipart stream
-  img.src = cameraUrl;
+      fallback.innerHTML =
+        '<div style="text-align:center;padding:60px 20px;color:var(--muted)">' +
+        '<p>Camera permission denied or unavailable.</p>' +
+        '<small>Allow camera access and reload the page.</small>' +
+        '</div>';
+    });
 }
 
 // Utility function to escape HTML
@@ -177,13 +152,4 @@ function escapeHtml(text) {
     "'": '&#039;'
   };
   return text.replace(/[&<>"']/g, m => map[m]);
-}
-
-// Handle modal background click
-document.addEventListener('click', (e) => {
-  const modal = document.getElementById('configModal');
-  if (e.target === modal) {
-    closeConfigModal();
-  }
-});
-modal && 
+} 
