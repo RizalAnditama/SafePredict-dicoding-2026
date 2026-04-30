@@ -58,6 +58,46 @@ npm install
 
 ## Usage
 
+## Free deployment (so it’s visible on the internet)
+
+This repo is split into two apps:
+
+- Backend: FastAPI (Python)
+- Frontend: Next.js (Node)
+
+The easiest free setup is:
+
+- Deploy **backend** on **Render (Free)**
+- Deploy **frontend** on **Vercel (Free)** and point it at the Render URL
+
+### 1) Deploy the backend to Render (Free)
+
+1. Push this repository to your GitHub account.
+2. Go to Render → **New** → **Blueprint**.
+3. Select your repo. Render will detect `backend/render.yaml` and create the service.
+4. After it finishes, copy your backend URL (it looks like `https://<name>.onrender.com`).
+
+Optional: in Render → service → **Environment**, you can set:
+
+- `LOG_LEVEL` (e.g. `INFO`)
+
+### 2) Deploy the frontend to Vercel (Free)
+
+1. Go to Vercel → **New Project** → import your repo.
+2. Set **Root Directory** to `frontend/`.
+3. In Vercel → Project → **Settings** → **Environment Variables**, add:
+
+- `BACKEND_API_BASE_URL` = your Render backend URL (e.g. `https://<name>.onrender.com`)
+
+4. Deploy.
+
+Vercel will use `frontend/vercel.json` to rewrite `/api/*` calls to your backend.
+
+### Notes / limitations
+
+- Render Free can “sleep” after inactivity (first request may be slower).
+- The webcam/camera endpoints require browser permission and may not work if you try to access a local camera from a remote hosted site depending on your browser/device policy.
+
 Start the backend (from repo root):
 
 ```powershell
@@ -137,4 +177,3 @@ This project is available under the MIT License. See `LICENSE`.
 ### README quality checklist
 
 See `README_CHECKLIST.md` for a short QA checklist to validate this file before release.
-
