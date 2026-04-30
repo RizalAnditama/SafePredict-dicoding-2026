@@ -4,42 +4,6 @@
 
 SafePredict — Predictive workplace safety for manufacturing. Real-time camera + tabular scoring to surface operational risk and near-misses.
 
-## Table of Contents
-- Repository layout
-- Quick overview
-- Prerequisites
-- Backend — install & run
-- Frontend — install & run
-- Sanity check
-- Environment & config
-- Troubleshooting
-- Contributing & Code of Conduct
-- License
-- Development checklist
-- Next steps
-
-## Repository layout
-- backend — FastAPI app, models, services  
-- frontend — Next.js dashboard (TypeScript)  
-- docs — implementation notes, workplan, backlog  
-See also: SafePredict_Project_Workplan.md
-
-## Quick overview
-- Backend: FastAPI + Uvicorn (Python)  
-- Frontend: Next.js (React, TypeScript)  
-- Planned ML: YOLOv8 for PPE detection; scikit-learn / XGBoost for tabular risk scoring
-
-## Prerequisites (Windows / Dev)
-- Python 3.10+ (`py -3`)  
-- Node.js 16+ and `npm`  
-- Git (optional)
-
-# SafePredict
-
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Status](https://img.shields.io/badge/status-prototype-orange.svg)](#) [![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](#)
-
-SafePredict — Predictive workplace safety for manufacturing. Real-time camera + tabular scoring to surface operational risk and near-misses.
-
 ## TL;DR
 SafePredict scores operational risk per shift using camera-derived signals and simple tabular heuristics so supervisors can proactively mitigate incidents.
 
