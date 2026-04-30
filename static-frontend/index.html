@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SafePredict Dashboard</title>
+  <meta name="description" content="Predictive workplace safety for manufacturing operations." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="page-shell">
+    <!-- Hero Section -->
+    <section class="hero-card">
+      <div class="eyebrow">SafePredict</div>
+      <h1>Predict workplace safety risk before incidents happen.</h1>
+      <p>
+        A manufacturing safety dashboard that fuses CCTV intelligence,
+        operational schedules, and maintenance context into one predictive
+        risk view. The dashboard now pulls a live sample risk score from the
+        backend API.
+      </p>
+      <div class="hero-media" aria-hidden="true">
+        <svg width="100%" height="160" viewBox="0 0 600 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="600" height="160" rx="12" fill="rgba(255,255,255,0.02)" />
+          <g transform="translate(24,24)">
+            <rect x="0" y="0" width="120" height="80" rx="8" fill="#0f1724" stroke="rgba(125,226,197,0.08)" />
+            <rect x="144" y="8" width="420" height="20" rx="6" fill="#0f1724" />
+            <rect x="144" y="36" width="300" height="14" rx="6" fill="#0f1724" />
+            <circle cx="60" cy="110" r="18" fill="#14303b" />
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Stats Grid -->
+    <section class="stats-grid" aria-label="key metrics" id="statsGrid">
+      <article class="stat-card">
+        <span>Live areas monitored</span>
+        <strong>12</strong>
+      </article>
+      <article class="stat-card">
+        <span>High-risk zones</span>
+        <strong>3</strong>
+      </article>
+      <article class="stat-card">
+        <span>Risk score drop after intervention</span>
+        <strong>28%</strong>
+      </article>
+    </section>
+
+    <!-- Content Grid -->
+    <section class="content-grid">
+      <!-- Risk Feed -->
+      <article class="panel">
+        <h2>Risk feed</h2>
+        <ul id="alertsList">
+          <li>Shift malam di press line 1 naik ke risk score 82.</li>
+          <li>Maintenance mesin tertunda 4 hari pada area welding.</li>
+          <li>Near-miss tercatat 6 kali dalam 7 hari terakhir.</li>
+        </ul>
+      </article>
+
+      <!-- Action Recommendation -->
+      <article class="panel panel-accent">
+        <h2>Action recommendation</h2>
+        <p id="recommendationText">
+          Rotate operators, inspect machine condition, and increase supervision before the next night shift starts.
+        </p>
+      </article>
+    </section>
+
+    <!-- Camera Grid -->
+    <section class="camera-grid" aria-label="camera monitoring">
+      <!-- Camera Feed Panel -->
+      <article class="panel camera-panel fixed">
+        <div class="panel-heading">
+          <div>
+            <h2>Camera feed</h2>
+            <p>Backend bridge streaming webcam laptop via MJPEG.</p>
+          </div>
+          <span class="status-pill" id="cameraStatus">Live bridge</span>
+        </div>
+
+        <div class="camera-frame">
+          <img 
+            id="cameraStream" 
+            src="" 
+            alt="Webcam stream"
+            style="display: none; width: 100%; height: 100%; object-fit: cover; background: #03050a;"
+          />
+          <video 
+            id="cameraVideo" 
+            style="display: none; width: 100%; height: 100%; object-fit: cover; background: #03050a;"
+          ></video>
+          <div class="camera-fallback" id="cameraFallback">
+            <div style="text-align: center; padding: 60px 20px; color: var(--muted);">
+              <p>Waiting for camera connection...</p>
+              <small>Make sure backend is running on http://localhost:8000</small>
+            </div>
+          </div>
+          <div class="camera-overlay">
+            <span>Webcam bridge</span>
+            <strong>Local laptop camera</strong>
+          </div>
+        </div>
+      </article>
+
+      <!-- Camera Notes -->
+      <article class="panel camera-notes">
+        <h2>Bridge note</h2>
+        <p>
+          This setup streams your laptop webcam through the backend so the
+          dashboard can consume it without browser camera permissions. If you
+          later need true RTSP, we can swap this bridge for an RTSP server.
+        </p>
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <p style="margin: 0 0 8px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent);">
+            Configuration
+          </p>
+          <p style="margin: 0; font-size: 12px; color: var(--muted);">
+            Backend URL: <span id="backendUrl" style="font-family: monospace;">http://localhost:8000</span>
+          </p>
+          <button id="configButton" style="margin-top: 12px; padding: 8px 12px; border: 1px solid var(--border); background: rgba(125, 226, 197, 0.1); color: var(--accent); border-radius: 8px; cursor: pointer; font-size: 12px;">
+            Change Backend URL
+          </button>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <!-- Configuration Modal -->
+  <div id="configModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: center; justify-content: center;">
+    <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 24px; max-width: 400px;">
+      <h3 style="margin-top: 0;">Configure Backend URL</h3>
+      <input 
+        id="backendUrlInput" 
+        type="text" 
+        placeholder="http://localhost:8000"
+        style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: var(--text); border-radius: 8px; font-family: monospace; box-sizing: border-box;"
+      />
+      <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
+        <button id="cancelConfig" style="padding: 8px 16px; border: 1px solid var(--border); background: transparent; color: var(--text); border-radius: 8px; cursor: pointer;">
+          Cancel
+        </button>
+        <button id="saveConfig" style="padding: 8px 16px; border: 1px solid var(--accent); background: rgba(125, 226, 197, 0.1); color: var(--accent); border-radius: 8px; cursor: pointer;">
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

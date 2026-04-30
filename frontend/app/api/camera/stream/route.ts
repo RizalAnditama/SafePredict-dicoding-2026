@@ -1,5 +1,10 @@
 export async function GET() {
-  const response = await fetch("http://127.0.0.1:8000/api/camera/stream", {
+  const backendBaseUrl =
+    process.env.BACKEND_API_BASE_URL ??
+    process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL ??
+    "http://127.0.0.1:8000";
+
+  const response = await fetch(`${backendBaseUrl}/api/camera/stream`, {
     cache: "no-store",
   });
 
