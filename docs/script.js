@@ -32,14 +32,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Refresh risk score every 30 seconds
   setInterval(loadRiskScore, 30000);
   
-  // Retry camera connection if failed
+  // Retry camera connection if failed (check every 5 seconds)
   setInterval(() => {
     const img = document.getElementById('cameraStream');
-    const video = document.getElementById('cameraVideo');
-    if (!img.src && !video.src && cameraStreamRetries < MAX_RETRIES) {
+    const fallback = document.getElementById('cameraFallback');
+    // If camera hasn't connected and we have retries left, try again
+    if (fallback.style.display !== 'none' && cameraStreamRetries < MAX_RETRIES) {
       initializeCamera();
     }
-  }, RETRY_DELAY);
+  }, 5000);
 });
 
 // Update displayed backend URL
@@ -157,57 +158,70 @@ function initializeCamera() {
   const fallback = document.getElementById('cameraFallback');
   const statusPill = document.getElementById('cameraStatus');
 
-  // Try MJPEG stream first (img tag with repeated requests)
+  // Reset state before attempting connection
+  img.style.display = 'none';
+  img.src = '';
+  fallback.style.display = 'block';
+  statusPill.textContent = 'Connecting...';
+  statusPill.classList.remove('status-pill-error');
+
+  // Try MJPEG stream (native browser support for multipart/x-mixed-replace)
   tryMjpegStream(img, fallback, statusPill);
 }
 
-// Try to stream camera via MJPEG (img tag)
+// Try to stream camera via MJPEG (img tag with native browser support)
 function tryMjpegStream(img, fallback, statusPill) {
   const cameraUrl = `${backendUrl}/api/camera/stream`;
   
-  // Create a new image element to test
-  const testImg = new Image();
+  let hasLoaded = false;
   let loadTimeout;
+  const startTime = Date.now();
 
-  testImg.onload = () => {
-    // Clear previous timeout
-    clearTimeout(loadTimeout);
-    
-    // Success - show the actual image
-    img.src = cameraUrl;
-    img.style.display = 'block';
-    fallback.style.display = 'none';
-    statusPill.textContent = 'Live bridge';
-    statusPill.classList.remove('status-pill-error');
-    cameraStreamRetries = 0;
-    
-    // Force refresh every 2 seconds for MJPEG streams
-    setInterval(() => {
-      if (img.src) {
-        img.src = cameraUrl + '?t=' + Date.now();
-      }
-    }, 2000);
-  };
+  console.log('Attempting camera connection:', cameraUrl);
 
-  testImg.onerror = () => {
-    clearTimeout(loadTimeout);
-    cameraStreamRetries++;
-    statusPill.textContent = 'Bridge connection failed';
-    statusPill.classList.add('status-pill-error');
-    console.warn(`Camera stream failed (attempt ${cameraStreamRetries}/${MAX_RETRIES})`);
-  };
-
-  // Set timeout for image load
+  // Set timeout to detect connection failure
   loadTimeout = setTimeout(() => {
-    clearTimeout(loadTimeout);
-    cameraStreamRetries++;
-    statusPill.textContent = 'Bridge connection timeout';
-    statusPill.classList.add('status-pill-error');
-    console.warn('Camera stream timeout');
+    if (!hasLoaded) {
+      img.style.display = 'none';
+      img.src = ''; // Clear src to allow retry
+      statusPill.textContent = 'Connection timeout';
+      statusPill.classList.add('status-pill-error');
+      cameraStreamRetries++;
+      console.warn(`Camera stream timeout after ${Date.now() - startTime}ms (attempt ${cameraStreamRetries}/${MAX_RETRIES})`);
+    }
   }, 5000);
 
-  // Trigger the load
-  testImg.src = cameraUrl + '?t=' + Date.now();
+  // Handle successful connection
+  img.onload = () => {
+    if (!hasLoaded) {
+      clearTimeout(loadTimeout);
+      hasLoaded = true;
+      img.style.display = 'block';
+      fallback.style.display = 'none';
+      statusPill.textContent = 'Live bridge';
+      statusPill.classList.remove('status-pill-error');
+      cameraStreamRetries = 0;
+      console.log(`Camera stream connected successfully in ${Date.now() - startTime}ms`);
+    }
+  };
+
+  // Handle connection errors
+  img.onerror = (event) => {
+    if (!hasLoaded) {
+      clearTimeout(loadTimeout);
+      img.style.display = 'none';
+      img.src = ''; // Clear src to allow retry
+      statusPill.textContent = 'Connection failed';
+      statusPill.classList.add('status-pill-error');
+      cameraStreamRetries++;
+      console.warn(`Camera stream error after ${Date.now() - startTime}ms (attempt ${cameraStreamRetries}/${MAX_RETRIES})`, event);
+    }
+  };
+
+  // Set MJPEG stream source
+  // NOTE: Do NOT append timestamps - this breaks the multipart/x-mixed-replace protocol
+  // The browser automatically handles the continuous multipart stream
+  img.src = cameraUrl;
 }
 
 // Utility function to escape HTML
